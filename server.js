@@ -27,20 +27,27 @@ const deviceDataSchema = new mongoose.Schema({
     ch7: Number,
     ch8: Number,
     prevtime: Number, // Store the previous time as an integer
-    logdate: String,  // New field for the current date in "YY/M/DD" format
-    longtime: String, // New field for the current time in "HH:MM:SS" format
+    logdate: String,  // Field for the current date in "YY/MM/DD" format
+    longtime: String, // Field for the current time in "HH:MM:SS" (24-hour format)
 });
 
 const DeviceData = mongoose.model('DeviceData', deviceDataSchema);
 
-// Function to get current Indian date and time
+// Function to get current Indian date and time in required formats
 function getCurrentIndianDateTime() {
     const now = new Date();
-    const options = { timeZone: 'Asia/Kolkata', year: '2-digit', month: 'numeric', day: 'numeric' };
-    const date = now.toLocaleDateString('en-IN', options).replace(/\//g, '/');  // Format: "YY/M/DD"
-    const time = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }); // Format: "HH:MM:SS"
-    
-    return { logdate: date, longtime: time };
+    const options = { timeZone: 'Asia/Kolkata' };
+
+    // Format date in "YY/MM/DD" (two-digit year)
+    const year = now.toLocaleDateString('en-IN', { ...options, year: '2-digit' });
+    const month = String(now.getMonth() + 1).padStart(2, '0');  // Add leading zero for single-digit months
+    const day = String(now.getDate()).padStart(2, '0');         // Add leading zero for single-digit days
+    const logdate = `${year}/${month}/${day}`;
+
+    // Format time in "HH:MM:SS" (24-hour format)
+    const longtime = now.toLocaleTimeString('en-IN', { ...options, hour12: false });
+
+    return { logdate, longtime };
 }
 
 // API endpoint to accept POST request
@@ -67,8 +74,8 @@ app.post('/add-user', async (req, res) => {
         ch7,
         ch8,
         prevtime,
-        logdate,  // Add current date
-        longtime, // Add current time
+        logdate,  // Add current date in YY/MM/DD format
+        longtime, // Add current time in 24-hour HH:MM:SS format
     });
 
     try {
